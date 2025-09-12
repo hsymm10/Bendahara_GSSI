@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplikasi Pembukuan Bendahara GSSI</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    :root {
+      --primary: #d32f2f;
+      --primary-dark: #b71c1c;
+      --primary-light: #ef5350;
+      --secondary: #f5f5f5;
+      --accent: #ff5252;
+      --text: #333;
+      --text-light: #fff;
+      --success: #4caf50;
+      --warning: #ff9800;
+      --danger: #f44336;
+      --gray: #9e9e9e;
+      --light-gray: #e0e0e0;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background: #f9f9f9; 
+      color: var(--text);
+      line-height: 1.6;
+    }
+    
+    .container { 
+      max-width: 1200px; 
+      margin: auto; 
+      padding: 15px; 
+    }
+    
+    h2 { 
+      text-align: center; 
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark)); 
+      color: var(--text-light); 
+      padding: 15px; 
+      border-radius: 8px; 
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    h3 { 
+      color: var(--primary-dark); 
+      margin: 20px 0 10px; 
+      border-left: 4px solid var(--primary); 
+      padding-left: 10px; 
+    }
+    
+    input, select, button { 
+      padding: 12px; 
+      margin: 5px 0; 
+      border: 1px solid var(--light-gray); 
+      border-radius: 8px; 
+      font-size: 14px; 
+      width: 100%;
+    }
+    
+    button { 
+      background: var(--primary); 
+      color: var(--text-light); 
+      border: none; 
+      cursor: pointer; 
+      transition: all 0.3s ease;
+      font-weight: bold;
+    }
+    
+    button:hover { 
+      background: var(--primary-dark); 
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      background: white; 
+      margin-top: 15px; 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    th, td { 
+      padding: 12px; 
+      border: 1px solid var(--light-gray); 
+      text-align: center; 
+    }
+    
+    th { 
+      background: var(--primary); 
+      color: var(--text-light); 
+    }
+    
+    tr:nth-child(even){ 
+      background: #f8f9fa; 
+    }
+    
+    .income { 
+      color: var(--success); 
+      font-weight: bold; 
+    }
+    
+    .expense { 
+      color: var(--danger); 
+      font-weight: bold; 
+    }
+    
+    .action-btn { 
+      padding: 8px 12px; 
+      border-radius: 6px; 
+      font-size: 12px; 
+      margin: 2px; 
+      cursor: pointer; 
+      border: none; 
+      transition: all 0.2s;
+    }
+    
+    .edit-btn { 
+      background: var(--warning); 
+      color: var(--text-light); 
+    }
+    
+    .delete-btn { 
+      background: var(--danger); 
+      color: var(--text-light); 
+    }
+    
+    .action-btn:hover {
+      transform: scale(1.05);
+    }
+    
+    .report-section { 
+      display: flex; 
+      gap: 15px; 
+      margin: 20px 0; 
+      flex-wrap: wrap; 
+    }
+    
+    .report-card { 
+      flex: 1; 
+      background: white; 
+      padding: 20px; 
+      border-radius: 8px; 
+      text-align: center; 
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      min-width: 200px;
+      border-top: 4px solid var(--primary);
+    }
+    
+    .report-card h4 {
+      color: var(--primary-dark);
+      margin-bottom: 10px;
+    }
+    
+    .report-card p {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    
+    .charts-container { 
+      display: flex; 
+      gap: 20px; 
+      flex-wrap: wrap; 
+    }
+    
+    .chart-wrapper { 
+      flex: 1; 
+      background: white; 
+      padding: 20px; 
+      border-radius: 8px; 
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      min-width: 300px;
+    }
+    
+    img.thumb { 
+      max-width: 80px; 
+      max-height: 80px; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      transition: 0.3s; 
+    }
+    
+    img.thumb:hover { 
+      transform: scale(1.1); 
+    }
+    
+    /* Modal */
+    #imgModal { 
+      display: none; 
+      position: fixed; 
+      z-index: 1000; 
+      left: 0; 
+      top: 0; 
+      width: 100%; 
+      height: 100%; 
+      background: rgba(0,0,0,0.9); 
+      text-align: center; 
+    }
+    
+    #imgModal img { 
+      margin: auto;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 90%;
+      max-height: 80%;
+      border-radius: 8px;
+    }
+    
+    #imgModal span { 
+      position: absolute; 
+      top: 20px; 
+      right: 35px; 
+      color: white; 
+      font-size: 40px; 
+      cursor: pointer; 
+      z-index: 1001;
+    }
+    
+    /* Form Grid */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    /* Filter Section */
+    .filter-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    /* Mobile Navigation */
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: var(--primary);
+      padding: 10px;
+      z-index: 100;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+    }
+    
+    .mobile-nav-buttons {
+      display: flex;
+      justify-content: space-around;
+    }
+    
+    .mobile-nav-btn {
+      background: transparent;
+      color: white;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 12px;
+    }
+    
+    .mobile-nav-btn:hover {
+      background: transparent;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+        padding-bottom: 70px; /* Space for mobile nav */
+      }
+      
+      .form-grid, .filter-section {
+        grid-template-columns: 1fr;
+      }
+      
+      table {
+        font-size: 14px;
+      }
+      
+      th, td {
+        padding: 8px 5px;
+      }
+      
+      .mobile-nav {
+        display: block;
+      }
+      
+      .report-card {
+        min-width: 100%;
+      }
+      
+      .chart-wrapper {
+        min-width: 100%;
+      }
+    }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-dark);
+    }
+    
+    /* Animation */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s ease forwards;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>Aplikasi Pembukuan Bendahara GSSI</h2>
+
+  <!-- Nama Organisasi -->
+  <h3>Nama Organisasi</h3>
+  <input type="text" id="orgName" value="GSSI (Gerakan Siswa Siswi Indonesia)" placeholder="Contoh: OSIS SMA 1 Jakarta" style="width:100%;max-width:400px;">
+
+  <!-- Form Transaksi -->
+  <h3>Tambah / Edit Transaksi</h3>
+  <div class="form-grid">
+    <input type="hidden" id="editIndex">
+    <select id="type">
+      <option value="pemasukan">Pemasukan</option>
+      <option value="pengeluaran">Pengeluaran</option>
+    </select>
+    <input type="date" id="date">
+    <input type="text" id="desc" placeholder="Keterangan">
+    <input type="number" id="amount" placeholder="Jumlah Uang">
+    <input list="categoryOptions" id="category" placeholder="Kategori">
+    <datalist id="categoryOptions">
+      <option value="Umum">
+      <option value="Iuran">
+      <option value="Donasi">
+      <option value="Operasional">
+      <option value="Transportasi">
+      <option value="Alat Tulis">
+    </datalist>
+    <input type="file" id="receipt" accept="image/*" capture="environment">
+    <button onclick="addTransaction()">Simpan</button>
+  </div>
+
+  <!-- Filter -->
+  <h3>Filter Transaksi</h3>
+  <div class="filter-section">
+    <div>
+      <label>Dari:</label>
+      <input type="date" id="startDate">
+    </div>
+    <div>
+      <label>Sampai:</label>
+      <input type="date" id="endDate">
+    </div>
+    <div>
+      <label>Kategori:</label>
+      <input type="text" id="filterCategory" placeholder="Semua">
+    </div>
+    <div style="display: flex; gap: 10px; align-items: flex-end;">
+      <button onclick="filterTransactions()">Terapkan</button>
+      <button onclick="resetFilter()" style="background: var(--gray);">Reset</button>
+    </div>
+  </div>
+
+  <!-- Tabel -->
+  <h3>Daftar Transaksi</h3>
+  <div style="overflow-x: auto;">
+    <table id="transactionTable">
+      <thead>
+        <tr>
+          <th>Tanggal</th>
+          <th>Keterangan</th>
+          <th>Jenis</th>
+          <th>Kategori</th>
+          <th>Jumlah</th>
+          <th>Nota</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Laporan -->
+  <h3>Laporan</h3>
+  <div class="report-section">
+    <div class="report-card fade-in"><h4>Total Pemasukan</h4><p id="totalIncome">Rp 0</p></div>
+    <div class="report-card fade-in"><h4>Total Pengeluaran</h4><p id="totalExpense">Rp 0</p></div>
+    <div class="report-card fade-in"><h4>Saldo Akhir</h4><p id="balance">Rp 0</p></div>
+  </div>
+
+  <!-- Export -->
+  <div style="display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0;">
+    <button onclick="exportCSV()">Ekspor ke Excel (CSV)</button>
+    <button onclick="exportPDF()">Cetak ke PDF</button>
+  </div>
+
+  <!-- Grafik -->
+  <h3>Grafik Laporan</h3>
+  <div class="charts-container">
+    <div class="chart-wrapper fade-in"><canvas id="pieChart"></canvas></div>
+    <div class="chart-wrapper fade-in"><canvas id="barChart"></canvas></div>
+  </div>
+
+  <!-- Backup & Restore -->
+  <h3>Backup & Restore Data</h3>
+  <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+    <button onclick="backupData()">💾 Backup Data</button>
+    <input type="file" id="restoreFile" accept=".json" style="flex: 1;">
+    <button onclick="restoreData()">📂 Restore Data</button>
+  </div>
+</div>
+
+<!-- Mobile Navigation -->
+<div class="mobile-nav">
+  <div class="mobile-nav-buttons">
+    <button class="mobile-nav-btn" onclick="document.getElementById('transactionTable').scrollIntoView({behavior: 'smooth'})">
+      <span>📋</span>
+      <span>Transaksi</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="document.querySelector('.report-section').scrollIntoView({behavior: 'smooth'})">
+      <span>📊</span>
+      <span>Laporan</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="document.querySelector('.charts-container').scrollIntoView({behavior: 'smooth'})">
+      <span>📈</span>
+      <span>Grafik</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="document.querySelector('h3:last-of-type').scrollIntoView({behavior: 'smooth'})">
+      <span>💾</span>
+      <span>Backup</span>
+    </button>
+  </div>
+</div>
+
+<!-- Modal Preview Nota -->
+<div id="imgModal">
+  <span onclick="closeModal()">&times;</span>
+  <img id="modalImg" src="">
+</div>
+
+<script>
+// Kode JavaScript tetap sama seperti sebelumnya
+let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+let filtered = [...transactions];
+let pieChart, barChart;
+
+function renderTable(data){
+  const tbody=document.querySelector("#transactionTable tbody");
+  tbody.innerHTML="";
+  let totalIncome=0,totalExpense=0;
+
+  data.forEach((t,index)=>{
+    const row=document.createElement("tr");
+    row.innerHTML=`
+      <td>${t.date}</td>
+      <td>${t.desc}</td>
+      <td class="${t.type==='pemasukan'?'income':'expense'}">${t.type}</td>
+      <td>${t.category}</td>
+      <td>Rp ${t.amount.toLocaleString("id-ID")}</td>
+      <td>${t.receipt?`<img src="${t.receipt}" class="thumb" onclick="openModal('${t.receipt}')">`:"-"}</td>
+      <td>
+        <button class="action-btn edit-btn" onclick="editTransaction(${index})">✏️</button>
+        <button class="action-btn delete-btn" onclick="deleteTransaction(${index})">❌</button>
+      </td>`;
+    tbody.appendChild(row);
+    if(t.type==="pemasukan") totalIncome+=t.amount; else totalExpense+=t.amount;
+  });
+
+  document.getElementById("totalIncome").innerText="Rp "+totalIncome.toLocaleString("id-ID");
+  document.getElementById("totalExpense").innerText="Rp "+totalExpense.toLocaleString("id-ID");
+  document.getElementById("balance").innerText="Rp "+(totalIncome-totalExpense).toLocaleString("id-ID");
+
+  updateCharts(data);
+}
+
+function addTransaction(){
+  const type=document.getElementById("type").value;
+  const date=document.getElementById("date").value;
+  const desc=document.getElementById("desc").value;
+  const amount=parseFloat(document.getElementById("amount").value);
+  const category=document.getElementById("category").value;
+  const receiptFile=document.getElementById("receipt").files[0];
+  const editIndex=document.getElementById("editIndex").value;
+
+  if(!date||!desc||isNaN(amount)){ alert("Lengkapi semua data!"); return; }
+
+  if(receiptFile){
+    const reader=new FileReader();
+    reader.onload=function(e){ saveTransaction(type,date,desc,amount,category,e.target.result,editIndex); };
+    reader.readAsDataURL(receiptFile);
+  }else{
+    saveTransaction(type,date,desc,amount,category,"",editIndex);
+  }
+}
+
+function saveTransaction(type,date,desc,amount,category,receipt,editIndex){
+  if(editIndex===""){ transactions.push({type,date,desc,amount,category,receipt}); }
+  else{ transactions[editIndex]={type,date,desc,amount,category,receipt}; document.getElementById("editIndex").value=""; }
+
+  localStorage.setItem("transactions",JSON.stringify(transactions));
+  filtered=[...transactions]; renderTable(filtered);
+
+  document.getElementById("desc").value=""; document.getElementById("amount").value="";
+  document.getElementById("date").value=""; document.getElementById("receipt").value="";
+}
+
+function editTransaction(index){
+  const t=transactions[index];
+  document.getElementById("type").value=t.type;
+  document.getElementById("date").value=t.date;
+  document.getElementById("desc").value=t.desc;
+  document.getElementById("amount").value=t.amount;
+  document.getElementById("category").value=t.category;
+  document.getElementById("editIndex").value=index;
+}
+
+function deleteTransaction(index){
+  if(confirm("Yakin mau hapus?")){
+    transactions.splice(index,1);
+    localStorage.setItem("transactions",JSON.stringify(transactions));
+    filtered=[...transactions]; renderTable(filtered);
+  }
+}
+
+function filterTransactions(){
+  const start=document.getElementById("startDate").value;
+  const end=document.getElementById("endDate").value;
+  const category=document.getElementById("filterCategory").value.toLowerCase();
+
+  filtered=transactions.filter(t=>{
+    return (!start||t.date>=start)&&(!end||t.date<=end)&&(!category||t.category.toLowerCase().includes(category));
+  });
+  renderTable(filtered);
+}
+
+function resetFilter(){ filtered=[...transactions]; document.getElementById("startDate").value=""; document.getElementById("endDate").value=""; document.getElementById("filterCategory").value=""; renderTable(filtered); }
+
+function exportCSV(){
+  let csv="Tanggal,Keterangan,Jenis,Kategori,Jumlah\n";
+  filtered.forEach(t=>{ csv+=`${t.date},${t.desc},${t.type},${t.category},${t.amount}\n`; });
+  const blob=new Blob([csv],{type:"text/csv"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="laporan.csv"; a.click();
+}
+
+async function exportPDF(){
+  const { jsPDF }=window.jspdf; const doc=new jsPDF();
+  const orgName=document.getElementById("orgName").value||"Organisasi";
+  doc.setFontSize(16); doc.text(orgName,14,20); doc.text("Laporan Pembukuan Bendahara",14,28);
+  const start=document.getElementById("startDate").value||"-";
+  const end=document.getElementById("endDate").value||"-";
+  doc.setFontSize(12); doc.text(`Periode: ${start} s/d ${end}`,14,36);
+
+  const tableData=filtered.map(t=>[t.date,t.desc,t.type,t.category,"Rp "+t.amount.toLocaleString("id-ID")]);
+  doc.autoTable({head:[["Tanggal","Keterangan","Jenis","Kategori","Jumlah"]],body:tableData,startY:45});
+
+  let totalIncome=0,totalExpense=0;
+  filtered.forEach(t=>{ if(t.type==="pemasukan") totalIncome+=t.amount; else totalExpense+=t.amount; });
+  const balance=totalIncome-totalExpense;
+  const summaryY=doc.lastAutoTable.finalY+10;
+  doc.text(`Total Pemasukan : Rp ${totalIncome.toLocaleString("id-ID")}`,14,summaryY);
+  doc.text(`Total Pengeluaran: Rp ${totalExpense.toLocaleString("id-ID")}`,14,summaryY+7);
+  doc.text(`Saldo Akhir      : Rp ${balance.toLocaleString("id-ID")}`,14,summaryY+14);
+
+  const ttdY=summaryY+40;
+  doc.text("Mengetahui,",140,ttdY); doc.text("Bendahara",140,ttdY+7); doc.text("(___________________)",130,ttdY+40);
+
+  doc.save("laporan.pdf");
+}
+
+function backupData(){
+  const blob=new Blob([JSON.stringify(transactions,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="backup.json"; a.click();
+}
+
+function restoreData(){
+  const fileInput=document.getElementById("restoreFile");
+  if(fileInput.files.length===0){ alert("Pilih file!"); return; }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{ const restored=JSON.parse(e.target.result);
+      if(Array.isArray(restored)){ transactions=[...transactions,...restored]; localStorage.setItem("transactions",JSON.stringify(transactions)); filtered=[...transactions]; renderTable(filtered); alert("Data di-restore!"); }
+      else alert("Format salah!");
+    }catch{ alert("Gagal baca file!"); }
+  };
+  reader.readAsText(fileInput.files[0]);
+}
+
+function updateCharts(data){
+  const categories={}; data.forEach(t=>{ if(!categories[t.category]) categories[t.category]=0; categories[t.category]+=t.amount; });
+  const pieLabels=Object.keys(categories); const pieData=Object.values(categories);
+  if(pieChart) pieChart.destroy();
+  pieChart=new Chart(document.getElementById("pieChart"),{type:"pie",data:{labels:pieLabels,datasets:[{data:pieData,backgroundColor:["#d32f2f","#f44336","#ef5350","#e57373","#ff8a80","#ffcdd2"]}]}});
+  
+  const monthly={}; data.forEach(t=>{ const m=t.date.slice(0,7); if(!monthly[m]) monthly[m]={pemasukan:0,pengeluaran:0}; monthly[m][t.type]+=t.amount; });
+  const barLabels=Object.keys(monthly);
+  const incomeData=barLabels.map(m=>monthly[m].pemasukan); const expenseData=barLabels.map(m=>monthly[m].pengeluaran);
+  if(barChart) barChart.destroy();
+  barChart=new Chart(document.getElementById("barChart"),{type:"bar",data:{labels:barLabels,datasets:[{label:"Pemasukan",data:incomeData,backgroundColor:"#4caf50"},{label:"Pengeluaran",data:expenseData,backgroundColor:"#d32f2f"}]},options:{scales:{y:{beginAtZero:true}}}});
+}
+
+function openModal(src){ document.getElementById("imgModal").style.display="block"; document.getElementById("modalImg").src=src; }
+function closeModal(){ document.getElementById("imgModal").style.display="none"; }
+
+// Initialize with GSSI as organization name
+document.getElementById("orgName").value = "GSSI (Gerakan Siswa Siswi Indonesia)";
+
+renderTable(filtered);
+</script>
+</body>
+</html>
