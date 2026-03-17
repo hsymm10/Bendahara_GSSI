@@ -482,7 +482,7 @@
       </select>
       <input type="date" id="date">
       <input type="text" id="desc" placeholder="Keterangan">
-      <input type="number" id="amount" placeholder="Jumlah Uang">
+      <input type="text" id="amount" placeholder="Jumlah Uang" onkeyup="formatCurrency(this)">
       <input list="categoryOptions" id="category" placeholder="Kategori">
       <datalist id="categoryOptions">
         <option value="Umum">
@@ -611,6 +611,16 @@
 
 <script>
 // Kode JavaScript
+// Format Currency Input
+function formatCurrency(input) {
+  let value = input.value.replace(/\D/g, "");
+  if (value === "") {
+    input.value = "";
+    return;
+  }
+  input.value = parseInt(value).toLocaleString("id-ID");
+}
+
 let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
 let filtered = [...transactions];
 let pieChart, barChart;
@@ -726,7 +736,8 @@ function addTransaction(){
   const type=document.getElementById("type").value;
   const date=document.getElementById("date").value;
   const desc=document.getElementById("desc").value;
-  const amount=parseFloat(document.getElementById("amount").value);
+  const rawAmount = document.getElementById("amount").value.replace(/\./g, "");
+  const amount = parseFloat(rawAmount);
   const category=document.getElementById("category").value;
   const receiptFile=document.getElementById("receipt").files[0];
   const editIndex=document.getElementById("editIndex").value;
@@ -758,7 +769,7 @@ function editTransaction(index){
   document.getElementById("type").value=t.type;
   document.getElementById("date").value=t.date;
   document.getElementById("desc").value=t.desc;
-  document.getElementById("amount").value=t.amount;
+  document.getElementById("amount").value=t.amount.toLocaleString("id-ID");
   document.getElementById("category").value=t.category;
   document.getElementById("editIndex").value=index;
   document.querySelector('.admin-only').scrollIntoView({behavior: 'smooth'});
