@@ -809,16 +809,36 @@ function togglePassword() {
   }
 }
 
-// Get Logo Base64 (Pre-load)
+// Get Logo Base64 (Pre-load & Optimize)
 let logoBase64 = null;
 function loadLogo() {
   const img = new Image();
   img.onload = function() {
     const canvas = document.createElement('canvas');
-    canvas.width = this.width;
-    canvas.height = this.height;
-    canvas.getContext('2d').drawImage(this, 0, 0);
-    logoBase64 = canvas.toDataURL('image/png');
+    // Scale down if image is too large (to avoid jsPDF memory issues)
+    const maxDim = 400; 
+    let width = this.width;
+    let height = this.height;
+    
+    if (width > maxDim || height > maxDim) {
+      if (width > height) {
+        height *= maxDim / width;
+        width = maxDim;
+      } else {
+        width *= maxDim / height;
+        height = maxDim;
+      }
+    }
+    
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(this, 0, 0, width, height);
+    logoBase64 = canvas.toDataURL('image/png', 0.8);
+    console.log("Logo optimized and loaded. Size:", logoBase64.length);
+  };
+  img.onerror = function() {
+    console.error("Gagal memuat logo_gssi.png. Pastikan file ada di folder yang sama.");
   };
   img.src = "./logo_gssi.png";
 }
@@ -837,19 +857,32 @@ async function exportPDF() {
     const end = document.getElementById("endDate").value || "-";
 
     // Add Logo Safely
+    console.log("Checking logo availability for PDF...");
     if (logoBase64) {
+      console.log("Adding logo from pre-loaded Base64");
       try {
         doc.addImage(logoBase64, 'PNG', 14, 10, 22, 22);
       } catch (err) {
-        console.warn("Logo add failed:", err);
+        console.error("Logo add failed from Base64:", err);
       }
     } else {
-      // Fallback to DOM element if pre-load failed
+      console.log("Pre-loaded logo not found, trying DOM element...");
       const domLogo = document.getElementById("mainLogo");
       if (domLogo && domLogo.naturalWidth > 0) {
+        console.log("Adding logo from DOM element");
         try {
-          doc.addImage(domLogo, 'PNG', 14, 10, 22, 22);
-        } catch (e) {}
+          // Use a fresh canvas to ensure data is clean
+          const canvas = document.createElement('canvas');
+          canvas.width = domLogo.naturalWidth;
+          canvas.height = domLogo.naturalHeight;
+          canvas.getContext('2d').drawImage(domLogo, 0, 0);
+          const dataUrl = canvas.toDataURL('image/png');
+          doc.addImage(dataUrl, 'PNG', 14, 10, 22, 22);
+        } catch (e) {
+          console.error("Logo add failed from DOM fallback:", e);
+        }
+      } else {
+        console.warn("Logo not found in DOM or image not ready.");
       }
     }
 
