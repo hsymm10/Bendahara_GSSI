@@ -611,7 +611,6 @@
 
 <script>
 // Kode JavaScript
-// Format Currency Input
 function formatCurrency(input) {
   let value = input.value.replace(/\D/g, "");
   if (value === "") {
@@ -822,28 +821,14 @@ async function exportPDF() {
     const start = document.getElementById("startDate").value || "-";
     const end = document.getElementById("endDate").value || "-";
 
-    // Load Logo Promise with robust path
-    const loadLogo = () => {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => resolve(null);
-        // Use more stable path derivation
-        const path = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')) + '/logo_gssi.png';
-        img.src = path;
-      });
-    };
-
-    const logoImg = await loadLogo();
-    if (logoImg) {
+    // Add Logo from DOM (Most reliable since it's already shown on screen)
+    const domLogo = document.getElementById("mainLogo");
+    if (domLogo && domLogo.complete && domLogo.naturalWidth > 0) {
       try {
-        const canvas = document.createElement('canvas');
-        canvas.width = logoImg.naturalWidth;
-        canvas.height = logoImg.naturalHeight;
-        canvas.getContext('2d').drawImage(logoImg, 0, 0);
-        const logoData = canvas.toDataURL('image/png');
-        doc.addImage(logoData, 'PNG', 14, 10, 25, 25);
-      } catch (e) { console.error("Logo error:", e); }
+        doc.addImage(domLogo, 'PNG', 14, 10, 25, 25);
+      } catch (err) {
+        console.error("PDF Logo Add Failed:", err);
+      }
     }
 
     // Header Text
