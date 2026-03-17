@@ -809,41 +809,7 @@ function togglePassword() {
   }
 }
 
-// Get Logo Base64 (Pre-load & Optimize)
-let logoBase64 = null;
-function loadLogo() {
-  const img = new Image();
-  img.onload = function() {
-    const canvas = document.createElement('canvas');
-    // Scale down if image is too large (to avoid jsPDF memory issues)
-    const maxDim = 400; 
-    let width = this.width;
-    let height = this.height;
-    
-    if (width > maxDim || height > maxDim) {
-      if (width > height) {
-        height *= maxDim / width;
-        width = maxDim;
-      } else {
-        width *= maxDim / height;
-        height = maxDim;
-      }
-    }
-    
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(this, 0, 0, width, height);
-    logoBase64 = canvas.toDataURL('image/png', 0.8);
-    console.log("Logo optimized and loaded. Size:", logoBase64.length);
-  };
-  img.onerror = function() {
-    console.error("Gagal memuat logo_gssi.png. Pastikan file ada di folder yang sama.");
-  };
-  img.src = "./logo_gssi.png";
-}
-loadLogo();
-
+// Initialize (Variables already declared above)
 async function exportPDF() {
   try {
     const { jsPDF } = window.jspdf;
@@ -856,45 +822,39 @@ async function exportPDF() {
     const start = document.getElementById("startDate").value || "-";
     const end = document.getElementById("endDate").value || "-";
 
-    // Add Logo Safely
-    console.log("Checking logo availability for PDF...");
-    if (logoBase64) {
-      console.log("Adding logo from pre-loaded Base64");
+    // Load Logo Promise with robust path
+    const loadLogo = () => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        // Use more stable path derivation
+        const path = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')) + '/logo_gssi.png';
+        img.src = path;
+      });
+    };
+
+    const logoImg = await loadLogo();
+    if (logoImg) {
       try {
-        doc.addImage(logoBase64, 'PNG', 14, 10, 22, 22);
-      } catch (err) {
-        console.error("Logo add failed from Base64:", err);
-      }
-    } else {
-      console.log("Pre-loaded logo not found, trying DOM element...");
-      const domLogo = document.getElementById("mainLogo");
-      if (domLogo && domLogo.naturalWidth > 0) {
-        console.log("Adding logo from DOM element");
-        try {
-          // Use a fresh canvas to ensure data is clean
-          const canvas = document.createElement('canvas');
-          canvas.width = domLogo.naturalWidth;
-          canvas.height = domLogo.naturalHeight;
-          canvas.getContext('2d').drawImage(domLogo, 0, 0);
-          const dataUrl = canvas.toDataURL('image/png');
-          doc.addImage(dataUrl, 'PNG', 14, 10, 22, 22);
-        } catch (e) {
-          console.error("Logo add failed from DOM fallback:", e);
-        }
-      } else {
-        console.warn("Logo not found in DOM or image not ready.");
-      }
+        const canvas = document.createElement('canvas');
+        canvas.width = logoImg.naturalWidth;
+        canvas.height = logoImg.naturalHeight;
+        canvas.getContext('2d').drawImage(logoImg, 0, 0);
+        const logoData = canvas.toDataURL('image/png');
+        doc.addImage(logoData, 'PNG', 14, 10, 25, 25);
+      } catch (e) { console.error("Logo error:", e); }
     }
 
     // Header Text
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
     doc.setTextColor(30, 41, 59);
-    doc.text(orgName, 42, 20);
+    doc.text(orgName, 45, 20);
     
     doc.setFont("helvetica", "normal");
     doc.setFontSize(14);
-    doc.text("Laporan Pembukuan Kas Bendahara", 42, 28);
+    doc.text("Laporan Pembukuan Kas Bendahara", 45, 28);
     
     doc.setDrawColor(99, 102, 241);
     doc.setLineWidth(0.5);
